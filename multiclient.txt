@@ -1,0 +1,161 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package Paket2;
+
+/**
+ *
+ * @author DELY
+ */
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.Scanner;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import javax.imageio.*;
+import javax.swing.ImageIcon;
+
+public class ServerMulti {
+Image newimg;
+public static BufferedImage bimg ;
+byte[] bytes;
+
+int port;
+ServerSocket server=null;
+Socket client=null;
+ExecutorService pool = null;
+int clientcount=0;
+    
+    public static void main(String[] args) throws IOException {
+        ServerMulti serverobj=new ServerMulti(21345);
+        serverobj.startServer();
+    }
+    
+    ServerMulti(int port){
+        this.port=port;
+        pool = Executors.newFixedThreadPool(5);
+    }
+
+    public void startServer() throws IOException {
+        
+        server=new ServerSocket(21345);
+        System.out.println("Server Booted");
+        System.out.println("Any client can stop the server by sending -1");
+        while(true)
+        {
+            client=server.accept();
+            clientcount++;
+            ServerThread runnable= new ServerThread(client,clientcount,this);
+            pool.execute(runnable);
+        }
+        
+    }
+
+    private static class ServerThread implements Runnable {
+        
+        ServerMulti server=null;
+        Socket client=null;
+        BufferedReader cin;
+        PrintStream cout;
+        Scanner sc=new Scanner(System.in);
+        int id;
+        String s;
+        
+        ServerThread(Socket client, int count ,ServerMulti server ) throws IOException {
+            
+            this.client=client;
+            this.server=server;
+            this.id=count;
+            System.out.println("Connection "+id+"established with client "+client);
+            cin=new BufferedReader(new InputStreamReader(client.getInputStream()));
+            cout=new PrintStream(client.getOutputStream());
+           //--------------------------------------------------
+//            DataInputStream in = new DataInputStream(this.client.getInputStream());
+//            System.out.println(in.readUTF());
+//            System.out.println(in.readUTF());
+//            DataOutputStream out = new DataOutputStream(this.client.getOutputStream());
+            //------------------------------------------------
+        }
+
+        @Override
+        public void run() {
+            int x=1;
+         try{
+//         while(true){
+             for(int i=0;i<1;i++){
+                        s=cin.readLine();
+  			 
+			System. out.print("Client("+id+") :"+s+"\n");
+			System.out.print("Server : ");
+//			    s=stdin.readLine();
+                            s=sc.nextLine();
+                       //--------------------------------------------------------
+//                        ImageIcon img1 = new ImageIcon("FP_KIJ.jpg");
+//                        Image img = img1.getImage();
+//                        Image newimg = img.getScaledInstance(100, 120, java.awt.Image.SCALE_SMOOTH);
+//                        ImageIcon newIcon=new ImageIcon(newimg);
+//                        bimg = ImageIO.read(new File("E:\\FP_KOMBER.jpg"));
+//                        ImageIO.write(bimg, "JPG", client.getOutputStream());
+//                        System.out.println("gambar terkirim");
+                       //---------------------------------------------------------- 
+                        if (s.equalsIgnoreCase("bye"))
+                        {
+                            cout.println("BYE");
+                            x=0;
+                            System.out.println("Connection ended by server");
+                            break;
+                        }
+			cout.println(s);
+		}
+		
+            
+                cin.close();
+                client.close();
+		cout.close();
+                if(x==0) {
+			System.out.println( "Server cleaning up." );
+			System.exit(0);
+                }
+         } 
+         catch(IOException ex){
+             System.out.println("Error : "+ex);
+         }
+            
+ 		
+        }
+    }
+      
+
+
+  
+}
+
+
+
+=======================================
+
+
+//			System.out.print("Server : ");
+////			    s=stdin.readLine();
+//                            s=sc.nextLine();
+//                        if (s.equalsIgnoreCase("bye"))
+//                        {
+//                            cout.println("BYE");
+//                            x=0;
+//                            System.out.println("Connection ended by server");
+//                            break;
+//                        }
+//			cout.println(s);

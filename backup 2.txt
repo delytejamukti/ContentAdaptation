@@ -1,0 +1,173 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package server_komber;
+
+/**
+ *
+ * @author DELY
+ */
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.Scanner;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.util.Iterator;
+import javax.imageio.*;
+import javax.imageio.stream.ImageOutputStream;
+import javax.swing.ImageIcon;
+import server_komber.Compression;
+
+public class Server_Komber {
+Image newimg;
+public static BufferedImage bimg ;
+byte[] bytes;
+static String AlamatTujuan;
+
+int port;
+ServerSocket server=null;
+Socket client=null;
+ExecutorService pool = null;
+int clientcount=0;
+    
+    public static void main(String[] args) throws IOException {
+        Server_Komber serverobj=new Server_Komber(21345);
+        serverobj.startServer();
+    }
+    
+    Server_Komber(int port){
+        this.port=port;
+        pool = Executors.newFixedThreadPool(5);
+    }
+
+    public void startServer() throws IOException {
+        
+        server=new ServerSocket(21345);
+        System.out.println("Server Booted");
+        System.out.println("Any client can stop the server by sending -1");
+        while(true)
+        {
+            client=server.accept();
+            clientcount++;
+            ServerThread runnable= new ServerThread(client,clientcount,this);
+            pool.execute(runnable);
+        }
+        
+    }
+    public static void Kompres(float kualitas) throws FileNotFoundException, IOException
+    {
+      File input = new File("C:\\xampp\\htdocs\\FP_KOMBER\\original\\gambar.jpg");
+      BufferedImage image = ImageIO.read(input);
+
+      File compressedImageFile = new File("C:\\xampp\\htdocs\\FP_KOMBER\\kompres\\compress"+String.valueOf(kualitas)+".jpg");
+      OutputStream os =new FileOutputStream(compressedImageFile);
+      
+      AlamatTujuan = "FP_KOMBER\\kompres\\compress"+String.valueOf(kualitas)+".jpg";
+      
+      Iterator<ImageWriter>writers =  ImageIO.getImageWritersByFormatName("jpg");
+      ImageWriter writer = (ImageWriter) writers.next();
+
+      ImageOutputStream ios = ImageIO.createImageOutputStream(os);
+      writer.setOutput(ios);
+
+      ImageWriteParam param = writer.getDefaultWriteParam();
+      
+      param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+      param.setCompressionQuality(kualitas);
+      writer.write(null, new IIOImage(image, null, null), param);
+      
+      os.close();
+      ios.close();
+      writer.dispose();
+    }
+
+    private static class ServerThread implements Runnable {
+        
+        Server_Komber server=null;
+        Socket client=null;
+        BufferedReader cin;
+        PrintStream cout;
+        Scanner sc=new Scanner(System.in);
+        int id;
+        String s;
+        
+        ServerThread(Socket client, int count ,Server_Komber server ) throws IOException {
+            
+            this.client=client;
+            this.server=server;
+            this.id=count;
+            System.out.println("Connection "+id+"established with client "+client);
+            cin=new BufferedReader(new InputStreamReader(client.getInputStream()));
+            cout=new PrintStream(client.getOutputStream());
+            
+            
+        }
+
+        @Override
+        public void run() 
+        {
+            int x=1;
+            try{
+                DataInputStream din = new DataInputStream(client.getInputStream());
+                DataOutputStream dout = new DataOutputStream(client.getOutputStream());
+                BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+                String msgin="",msgout="";
+//            for(int i=0;i<1;i++)
+//            {
+                msgin=din.readUTF();
+                
+//                s=cin.readLine();
+		System.out.print("Client("+id+") :"+msgin+"\n");
+                if(Float.parseFloat(msgin)<500)
+                {   System.out.println("<500");
+                    float kualitas=0.05f;
+                    Kompres(kualitas);
+                    
+                }
+                else
+                {   System.out.println(">=500");
+                    float kualitas=0.5f;
+                    Kompres(kualitas);
+                }
+                
+                System.out.println(AlamatTujuan);
+                msgout=AlamatTujuan;
+//                cout.println(s);
+                dout.writeUTF(msgout);
+            
+//            }
+		          
+                cin.close();
+                client.close();
+		cout.close();
+                if(x==0) 
+                {
+			System.out.println( "Server cleaning up." );
+			System.exit(0);
+                }
+            } 
+            catch(IOException ex){
+                System.out.println("Error : "+ex);
+            }
+            
+ 		
+        }
+    }
+    
+}
